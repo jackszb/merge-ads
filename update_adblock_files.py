@@ -1,47 +1,61 @@
 import requests
 import json
-import os
+import sys
 
 DOMAIN_LISTS = [
     "https://raw.githubusercontent.com/mullvad/dns-blocklists/main/lists/doh/adblock/AdguardDNS",
     "https://raw.githubusercontent.com/cbuijs/adguarddns/main/Main/domains",
     "https://raw.githubusercontent.com/cbuijs/oisd/master/big/domains",
     "https://raw.githubusercontent.com/cbuijs/hagezi/main/lists/pro/domains",
-    "https://raw.githubusercontent.com/jackszb/AWAvenue-Ads-Rule/main/AWAvenue-Ads-Rule-domains-cleaned.txt"
+    "https://raw.githubusercontent.com/jackszb/AWAvenue-Ads-Rule/main/AWAvenue-Ads-Rule-domains-cleaned.txt",
 ]
 
-# 下载并合并域名列表
-with open('ads-domains.txt', 'w') as outfile:
-    for url in DOMAIN_LISTS:
-        response = requests.get(url)
-        if response.status_code == 200:
-            # 过滤空行和注释行
-            lines = response.text.splitlines()
-            for line in lines:
-                if line.strip() and not line.startswith("#"):
-                    outfile.write(line.strip() + "\n")
+HEADERS = {
+    "User-Agent": "GitHubActions-Adblock-Updater/1.0"
+}
 
-# 使用 sort 命令去重，并删除空行
-os.system("sort -u ads-domains.txt -o ads-domains.txt")
+all_domains = set()
+failed_sources = []
 
-# 读取 ads-domains.txt 生成 adblock.json
-with open('ads-domains.txt', 'r') as f:
-    domain_list = [line.strip() for line in f.readlines() if line.strip()]
+for url in DOMAIN_LISTS:
+    try:
+        resp = requests.get(url, headers=HEADERS, timeout=20)
+        resp.raise_for_status()
 
-# 对域名列表进行排序
-domain_list.sort()
+        for line in resp.text.splitlines():
+            line = line.strip()
+            if line:
+                all_domains.add(line)
+
+        print(f"[OK] {url}")
+
+    except Exception as e:
+        print(f"[WARN] Failed to fetch {url}: {e}")
+        failed_sources.append(url)
+
+if not all_domains:
+    print("[ERROR] No domains collected, aborting.")
+    sys.exit(1)
+
+sorted_domains = sorted(all_domains)
+
+with open("ads-domains.txt", "w") as f:
+    f.write("\n".join(sorted_domains) + "\n")
 
 result = {
     "version": 3,
     "rules": [
         {
-            "domain_suffix": domain_list
+            "domain_suffix": sorted_domains
         }
     ]
 }
 
-# 生成 adblock.json
-with open('adblock.json', 'w') as json_file:
-    json.dump(result, json_file, indent=2)
+with open("adblock.json", "w") as f:
+    json.dump(result, f, indent=2)
 
-print("ads-domains.txt and adblock.json generated.")
+print(f"Generated {len(sorted_domains)} domains.")
+if failed_sources:
+    print("Warning: Some sources failed:")
+    for u in failed_sources:
+        print(" -", u)
