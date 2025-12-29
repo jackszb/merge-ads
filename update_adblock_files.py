@@ -8,6 +8,7 @@ DOMAIN_LISTS = [
     "https://raw.githubusercontent.com/cbuijs/oisd/master/big/domains",
     "https://raw.githubusercontent.com/cbuijs/hagezi/main/lists/pro/domains",
     "https://raw.githubusercontent.com/jackszb/AWAvenue-Ads-Rule/main/AWAvenue-Ads-Rule-domains-cleaned.txt",
+    "https://raw.githubusercontent.com/jackszb/merge-ads/main/httpdns.txt",
 ]
 
 HEADERS = {
