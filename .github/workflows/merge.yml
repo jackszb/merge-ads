@@ -39,14 +39,11 @@ jobs:
       run: |
         sing-box rule-set compile --output adblock.srs adblock.json
 
-    - name: Pull latest changes from remote repository
+    - name: Commit & Push updated files
       run: |
         git config --global user.email "github-actions@github.com"
         git config --global user.name "GitHub Actions"
-        git pull origin main --rebase
 
-    - name: Commit & Push updated files
-      run: |
         mkdir -p rules
         mv ads-domains.txt adblock.json adblock.srs rules/
 
