@@ -1,5 +1,6 @@
 import requests
 import json
+import os
 
 DOMAIN_LISTS = [
     "https://raw.githubusercontent.com/mullvad/dns-blocklists/main/lists/doh/adblock/AdguardDNS",
@@ -17,9 +18,15 @@ with open('ads-domains.txt', 'w') as outfile:
                 if line.strip() and not line.startswith("#"):
                     outfile.write(line.strip() + "\n")
 
+# 使用 sort 命令去重，并删除空行
+os.system("sort -u ads-domains.txt -o ads-domains.txt")
+
 # 读取 ads-domains.txt 生成 adblock.json
 with open('ads-domains.txt', 'r') as f:
     domain_list = [line.strip() for line in f.readlines() if line.strip()]
+
+# 对域名列表进行排序
+domain_list.sort()
 
 result = {
     "version": 3,
@@ -30,6 +37,7 @@ result = {
     ]
 }
 
+# 生成 adblock.json
 with open('adblock.json', 'w') as json_file:
     json.dump(result, json_file, indent=2)
 
