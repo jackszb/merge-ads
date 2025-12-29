@@ -1,51 +1,97 @@
-name: Update Adblock Rules
+name: Update AdBlock Rules
 
 on:
   schedule:
-    - cron: '0 0 * * 0'  # 每周更新一次
-  workflow_dispatch:  # 支持手动触发
+    - cron: "0 0 * * 1"
+  push:
+    branches:
+      - main
+  workflow_dispatch:
 
 jobs:
-  update_rules:
+  update_adblock_rules:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Download Adblock Domain Lists
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.9
+
+    - name: Install dependencies
       run: |
-        LINKS=(
+        sudo apt-get update
+        sudo apt-get install -y curl unzip
+        pip install requests
+
+    - name: Download and merge ad domains
+      run: |
+        echo "Downloading and merging ad domains..."
+        
+        DOMAIN_LISTS=(
           "https://raw.githubusercontent.com/mullvad/dns-blocklists/main/lists/doh/adblock/AdguardDNS"
           "https://raw.githubusercontent.com/cbuijs/oisd/master/small/domains"
         )
-        mkdir -p rules
-        > rules/ads-domains.txt
-        for LINK in "${LINKS[@]}"; do
-          curl -sSL "$LINK" >> rules/ads-domains.txt
+        
+        > ads-domains.txt
+        for url in "${DOMAIN_LISTS[@]}"; do
+          curl -s "$url" | grep -v '^#' | grep -v '^$' >> ads-domains.txt
         done
-        sort -u rules/ads-domains.txt -o rules/ads-domains.txt
-        sed -i '/^\s*$/d' rules/ads-domains.txt
+        
+        sort -u ads-domains.txt -o ads-domains.txt
+        
+        echo "ads-domains.txt generated."
 
-    - name: Generate Sing-box JSON Rule File
+    - name: Generate adblock.json
       run: |
-        # 使用 jq 流式处理逐行读取并生成 JSON
-        jq -n --arg version "3" \
-          '{ "version": $version, "rules": [{"domain_suffix": []}] }' > rules/adblock.json
-        while IFS= read -r line; do
-          jq --arg domain "$line" \
-            '.rules[0].domain_suffix += [$domain]' rules/adblock.json > tmp.json && mv tmp.json rules/adblock.json
-        done < rules/ads-domains.txt
+        echo "Generating adblock.json from ads-domains.txt..."
+        
+        python3 - <<'EOF'
+import json
 
-    - name: Install Sing-box
+with open('ads-domains.txt', 'r') as f:
+    domain_list = [line.strip() for line in f.readlines() if line.strip()]
+
+result = {
+    "version": 3,
+    "rules": [
+        {
+            "domain_suffix": domain_list
+        }
+    ]
+}
+
+with open('adblock.json', 'w') as json_file:
+    json.dump(result, json_file, indent=2)
+
+print("adblock.json generated.")
+EOF
+
+    - name: Install sing-box
       run: |
+        echo "Installing sing-box..."
         curl -fsSL https://sing-box.app/install.sh | sh
 
-    - name: Compile Sing-box Rules
+    - name: Compile adblock.json to adblock.srs
       run: |
-        sing-box rule-set compile --output rules/adblock.srs rules/adblock.json
+        echo "Compiling adblock.json to adblock.srs..."
+        sing-box rule-set compile --output adblock.srs adblock.json
 
-    - name: Commit & Push Updates
+    - name: Commit & Push updated files
       run: |
+        echo "Pushing files to GitHub..."
+        
+        mkdir -p rules
+        
+        mv ads-domains.txt adblock.json adblock.srs rules/
+
         git config --global user.email "github-actions@github.com"
         git config --global user.name "GitHub Actions"
-        git add rules/*
-        git commit -m "Auto update Adblock rules (from GitHub Actions)"
+
+        git add rules/
+        git commit -m "Auto update adblock rules" || echo "No changes"
+
         git push
