@@ -26,10 +26,13 @@ jobs:
 
     - name: Generate Sing-box JSON Rule File
       run: |
-        jq -n --arg version "3" '{"version": $version, "rules": []}' > rules/adblock.json
-        while IFS= read -r line; do
-          jq --arg domain "$line" '.rules += [{"domain_suffix": [$domain]}]' rules/adblock.json > tmp.json && mv tmp.json rules/adblock.json
-        done < rules/ads-domains.txt
+        # 读取所有域名到一个变量并生成完整的 JSON
+        domains=$(cat rules/ads-domains.txt | jq -R . | jq -s .)
+
+        # 使用 jq 批量构建 JSON 规则文件
+        jq -n --arg version "3" \
+          --argjson rules "[$domains]" \
+          '{"version": $version, "rules": [{"domain_suffix": $rules}]}' > rules/adblock.json
 
     - name: Install Sing-box
       run: |
