@@ -82,10 +82,7 @@ EOF
 
     - name: Commit & Push updated files
       run: |
-        echo "Pushing files to GitHub..."
-        
         mkdir -p rules
-        
         mv ads-domains.txt adblock.json adblock.srs rules/
 
         git config --global user.email "github-actions@github.com"
@@ -93,5 +90,4 @@ EOF
 
         git add rules/
         git commit -m "Auto update adblock rules" || echo "No changes"
-
         git push
