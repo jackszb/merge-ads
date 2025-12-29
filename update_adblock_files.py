@@ -4,6 +4,7 @@ import os
 
 DOMAIN_LISTS = [
     "https://raw.githubusercontent.com/mullvad/dns-blocklists/main/lists/doh/adblock/AdguardDNS",
+    "https://raw.githubusercontent.com/cbuijs/adguarddns/main/Main/domains",
     "https://raw.githubusercontent.com/cbuijs/oisd/master/big/domains",
     "https://raw.githubusercontent.com/cbuijs/hagezi/main/lists/pro/domains",
     "https://raw.githubusercontent.com/jackszb/AWAvenue-Ads-Rule/main/AWAvenue-Ads-Rule-domains-cleaned.txt"
