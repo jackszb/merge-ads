@@ -4,7 +4,8 @@ import os
 
 DOMAIN_LISTS = [
     "https://raw.githubusercontent.com/mullvad/dns-blocklists/main/lists/doh/adblock/AdguardDNS",
-    "https://raw.githubusercontent.com/cbuijs/oisd/master/small/domains"
+    "https://raw.githubusercontent.com/cbuijs/oisd/master/small/domains",
+    "https://raw.githubusercontent.com/cbuijs/hagezi/main/lists/pro/domains"
 ]
 
 # 下载并合并域名列表
