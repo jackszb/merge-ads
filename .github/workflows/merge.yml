@@ -1,0 +1,48 @@
+name: Update Adblock Rules
+
+on:
+  schedule:
+    - cron: '0 0 * * 0'  # 每周更新一次
+  workflow_dispatch:  # 支持手动触发
+
+jobs:
+  update_rules:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Download Adblock Domain Lists
+      run: |
+        LINKS=(
+          "https://raw.githubusercontent.com/mullvad/dns-blocklists/main/lists/doh/adblock/AdguardDNS"
+          "https://raw.githubusercontent.com/cbuijs/oisd/master/small/domains"
+        )
+        mkdir -p rules
+        > rules/ads-domains.txt
+        for LINK in "${LINKS[@]}"; do
+          curl -sSL "$LINK" >> rules/ads-domains.txt
+        done
+        sort -u rules/ads-domains.txt -o rules/ads-domains.txt
+        sed -i '/^\s*$/d' rules/ads-domains.txt
+
+    - name: Generate Sing-box JSON Rule File
+      run: |
+        jq -n --arg version "3" '{"version": $version, "rules": []}' > rules/adblock.json
+        while IFS= read -r line; do
+          jq --arg domain "$line" '.rules += [{"domain_suffix": [$domain]}]' rules/adblock.json > tmp.json && mv tmp.json rules/adblock.json
+        done < rules/ads-domains.txt
+
+    - name: Install Sing-box
+      run: |
+        curl -fsSL https://sing-box.app/install.sh | sh
+
+    - name: Compile Sing-box Rules
+      run: |
+        sing-box rule-set compile --output rules/adblock.srs rules/adblock.json
+
+    - name: Commit & Push Updates
+      run: |
+        git config --global user.email "github-actions@github.com"
+        git config --global user.name "GitHub Actions"
+        git add rules/*
+        git commit -m "Auto update Adblock rules (from GitHub Actions)"
+        git push
