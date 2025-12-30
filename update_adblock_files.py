@@ -1,6 +1,7 @@
 import requests
 import json
 import sys
+import re
 
 DOMAIN_LISTS = [
     "https://raw.githubusercontent.com/mullvad/dns-blocklists/main/lists/doh/adblock/AdguardDNS",
@@ -17,6 +18,24 @@ DOMAIN_LISTS = [
 HEADERS = {
     "User-Agent": "GitHubActions-Adblock-Updater/1.0"
 }
+
+# ===== 新增：合法域名校验 =====
+DOMAIN_PATTERN = re.compile(
+    r"^(?=.{1,253}$)(?!-)[A-Za-z0-9-]{1,63}(?<!-)"
+    r"(?:\.(?!-)[A-Za-z0-9-]{1,63}(?<!-))*$"
+)
+
+def is_valid_domain(domain: str) -> bool:
+    if not domain:
+        return False
+    if "://" in domain:
+        return False
+    if "/" in domain or "?" in domain or "#" in domain:
+        return False
+    if "_" in domain:
+        return False
+    return bool(DOMAIN_PATTERN.match(domain))
+
 
 all_domains = set()
 failed_sources = []
@@ -41,7 +60,11 @@ if not all_domains:
     print("[ERROR] No domains collected, aborting.")
     sys.exit(1)
 
-sorted_domains = sorted(all_domains)
+# ===== 新增：清除非法域名 =====
+valid_domains = [d for d in all_domains if is_valid_domain(d)]
+removed_count = len(all_domains) - len(valid_domains)
+
+sorted_domains = sorted(valid_domains)
 
 with open("ads-domains.txt", "w") as f:
     f.write("\n".join(sorted_domains) + "\n")
@@ -59,6 +82,8 @@ with open("adblock.json", "w") as f:
     json.dump(result, f, indent=2)
 
 print(f"Generated {len(sorted_domains)} domains.")
+print(f"Removed {removed_count} invalid domains.")
+
 if failed_sources:
     print("Warning: Some sources failed:")
     for u in failed_sources:
