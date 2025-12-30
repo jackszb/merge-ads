@@ -12,6 +12,7 @@ DOMAIN_LISTS = [
     "https://raw.githubusercontent.com/privacy-protection-tools/anti-AD/master/anti-ad-domains.txt",
     "https://raw.githubusercontent.com/jackszb/AWAvenue-Ads-Rule/main/AWAvenue-Ads-Rule-domains-cleaned.txt",
     "https://raw.githubusercontent.com/jackszb/Cats-Team/main/jiekouAD-domains-cleaned.txt",
+    "https://raw.githubusercontent.com/cbuijs/blocklistproject/main/lists/ads/domains",
     "https://raw.githubusercontent.com/jackszb/merge-ads/main/httpdns.txt",
 ]
 
