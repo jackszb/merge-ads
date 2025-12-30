@@ -8,6 +8,7 @@ DOMAIN_LISTS = [
     "https://raw.githubusercontent.com/cbuijs/oisd/master/small/domains",
     "https://raw.githubusercontent.com/cbuijs/hagezi/main/lists/light/domains",
     "https://raw.githubusercontent.com/cbuijs/1hosts/main/Lite/domains",
+    "https://raw.githubusercontent.com/privacy-protection-tools/anti-AD/master/anti-ad-domains.txt",
     "https://raw.githubusercontent.com/jackszb/AWAvenue-Ads-Rule/main/AWAvenue-Ads-Rule-domains-cleaned.txt",
     "https://raw.githubusercontent.com/jackszb/merge-ads/main/httpdns.txt",
 ]
